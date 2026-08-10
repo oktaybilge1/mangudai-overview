@@ -88,9 +88,34 @@ Modern organizations have distributed, dynamic assets across multiple hosting pr
 
 ---
 
-## 📸 Screenshots
+## 📸 Platform Interface Gallery
 
-*Screenshots and UI mockups of the Mangudai ASM Dashboard, Interactive Risk Score Dial, Mock Billing interface, and Client Portfolios will be added to the `/screenshots` directory.*
+Below are the interface screenshots showing the Mangudai ASM dashboard, active security scans, risk scoring dials, customized billing simulator, and client portfolio views:
+
+<p align="center">
+  <img src="screenshots/1.png" width="48%" alt="Mangudai ASM Interface 1" />
+  <img src="screenshots/2.png" width="48%" alt="Mangudai ASM Interface 2" />
+</p>
+
+<p align="center">
+  <img src="screenshots/3.png" width="48%" alt="Mangudai ASM Interface 3" />
+  <img src="screenshots/4.png" width="48%" alt="Mangudai ASM Interface 4" />
+</p>
+
+<p align="center">
+  <img src="screenshots/5.png" width="48%" alt="Mangudai ASM Interface 5" />
+  <img src="screenshots/6.png" width="48%" alt="Mangudai ASM Interface 6" />
+</p>
+
+<p align="center">
+  <img src="screenshots/7.png" width="48%" alt="Mangudai ASM Interface 7" />
+  <img src="screenshots/8.png" width="48%" alt="Mangudai ASM Interface 8" />
+</p>
+
+<p align="center">
+  <img src="screenshots/9.png" width="48%" alt="Mangudai ASM Interface 9" />
+  <img src="screenshots/10.png" width="48%" alt="Mangudai ASM Interface 10" />
+</p>
 
 ---
 
