@@ -1,123 +1,93 @@
-# 🛡️ Mangudai Attack Surface Management (ASM) Platform
+<div align="center">
 
-[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://golang.org)
-[![Next.js](https://img.shields.io/badge/Next.js-15--App--Router-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
-[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+<img src="screenshots/hero.webp" alt="Mangudai: we scout your attack surface before attackers do" width="100%">
 
-**Mangudai ASM** is a comprehensive, multi-tenant External Attack Surface Management (EASM) and Vulnerability Management SaaS platform. It continuously discovers, audits, and monitors external-facing digital assets (subdomains, open ports, web applications, SSL certificates, email records) to assess organization-level risk scores and identify critical vulnerabilities.
+# Mangudai
 
-> [!NOTE]
-> This repository is a **Public Documentation & Showcase Hub** for the Mangudai ASM platform. The core commercial source code (Go microservices & Next.js frontend) remains proprietary and private. For inquiries or live access, visit [mangudai.io](https://mangudai.io).
+**External attack surface management for small security teams, agencies and MSSPs.**
+Enter a domain. See what an attacker sees from the outside. Get fix steps, not noise.
+
+[![Live](https://img.shields.io/badge/live-mangudai.io-D4AF37?style=for-the-badge)](https://mangudai.io)
+[![Free scan](https://img.shields.io/badge/first%20scan-free-2ea44f?style=for-the-badge)](https://mangudai.io)
+[![Reports](https://img.shields.io/badge/PDF%20reports-6%20languages-1f6feb?style=for-the-badge)](https://mangudai.io/mangudai_sample_report_en.pdf)
+[![Source](https://img.shields.io/badge/source-proprietary-555?style=for-the-badge)](#about-this-repository)
+
+[**Run a free scan**](https://mangudai.io) · [Sample PDF report](https://mangudai.io/mangudai_sample_report_en.pdf) · [Pricing](https://mangudai.io/#pricing) · [Blog](https://mangudai.io/blog) · [Threat feed](https://mangudai.io/news)
+
+</div>
 
 ---
 
-## 📐 System Architecture
+## What it does
 
-Mangudai ASM is built as a highly scalable microservice system utilizing a decoupled REST API and an asynchronous background worker queue.
+Mangudai scans a domain from the outside and reports what is exposed: forgotten subdomains, open ports, weak TLS, missing security headers, leaked files and email spoofing gaps. Nothing to install, no agent to deploy. Most scans finish in one to three minutes and stream live to the dashboard.
+
+<img src="screenshots/report.webp" alt="Example scan report with score, subdomains, ports and TLS status" width="100%">
+
+<sub>Example report card. The domain shown is a demo target.</sub>
+
+## The nine scan modules
+
+<img src="screenshots/engine.webp" alt="The nine Mangudai scan modules" width="100%">
+
+| # | Module | What it checks |
+|---|---|---|
+| 1 | Forgotten asset discovery | Old, staging and forgotten subdomains |
+| 2 | Open port and service audit | Exposed databases and remote access ports |
+| 3 | Web availability probing | HTTP/HTTPS reachability without false positives |
+| 4 | Security header audit | HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy |
+| 5 | Critical file and data leak guard | Exposed `.git`, backups, env files, directory listings |
+| 6 | SSL/TLS certificate inspector | Expiry, self-signed, hostname mismatch, weak protocols |
+| 7 | Email security | SPF and DMARC records and policies |
+| 8 | Nikto web scan | Common web misconfigurations |
+| 9 | SQL injection heuristics | Safe canary checks on query parameters |
+
+Known vulnerabilities are matched against the NVD. Matches that come only from a software banner are shown as **unverified**, because distributions often patch without changing the version. Modules 8 and 9 are active checks: they run only for registered accounts that sign an authorization declaration for that scan, and never on anonymous demo scans.
+
+## Built for
+
+- **Small security teams** that need an outside view without an enterprise contract.
+- **Agencies and MSSPs** that report to clients: white-label PDF reports and a client portfolio view.
+- **Founders** who want to know what is visible before a customer or auditor asks.
+
+Reports include a technical KVKK and GDPR pre-assessment. It is a technical check, not legal advice or a certification.
+
+## Plans
+
+<img src="screenshots/pricing.webp" alt="Mangudai plans: Scout free, Warrior $29, Commander $59, Khan $149" width="100%">
+
+| Plan | Price | Scans / month | Scope | Highlights |
+|---|---|---|---|---|
+| **Scout** | Free | 5 | 1 project, 1 target | Subdomains, SSL/TLS, headers, SPF/DMARC |
+| **Warrior** | $29 / mo | 20 | 5 projects, 20 targets | Port, web and file scans, basic PDF export, weekly monitoring (3 targets), email alerts |
+| **Commander** | $59 / mo | 60 | Unlimited | AI executive summary, PDF in 6 languages, dark web check, daily monitoring (10 targets), API access, Slack alerts |
+| **Khan** | $149 / mo | 300 | Unlimited | White-label PDF, client portfolio, daily monitoring (50 targets), priority support |
+
+Current prices are always on [mangudai.io](https://mangudai.io/#pricing).
+
+## How it works
 
 ```mermaid
-graph TD
-    A[Next.js Frontend] -- REST API --> B[Go Gin REST API]
-    A -- WebSockets --> B
-    B -- Read/Write --> C[PostgreSQL 15]
-    B -- Queue Jobs --> D[Redis 7 Queue]
-    D -- Poll Tasks --> E[Go Worker Engine]
-    E -- Active Probes --> F[Nmap / Subfinder / Nikto]
-    E -- Passive Probes --> G[SSL / SPF / DMARC Audits]
-    E -- Write Findings --> C
-    H[Go Scheduler Cron] -- Lock/Sync --> D
-    H -- Trigger Scans --> B
+flowchart LR
+    U([You]) --> F[Web app]
+    F --> A[API]
+    A --> Q[(Scan queue)]
+    Q --> W[Scan workers]
+    W --> P1[Passive checks<br/>DNS, TLS, email]
+    W --> P2[Active checks<br/>ports, web, files]
+    W --> R[Risk score + diff]
+    R --> D[(Findings)]
+    D --> A
+    S[Scheduler] --> Q
+    A -. live progress .-> F
 ```
 
-### Components Summary:
-1. **Frontend:** React / Next.js (App Router) styled with high-fidelity Vanilla CSS, using `framer-motion` for fluid dashboard animations and `lucide-react` for responsive iconography.
-2. **Backend API:** Go (`Gin Gonic`) server handling multi-tenant authorization, project/target configuration management, JWT authentication, stripe billing integration, and WebSocket-based live progress synchronization.
-3. **Scan Worker Engine:** A Go daemon polling Redis task channels to execute high-performance concurrent security scans, coordinating CLI binary wrappers (`nmap`, `subfinder`, `nikto`) and native network probes.
-4. **Scheduler Service:** A Go container managing recurring automated checks for domain configurations (SSL expiry, DNS drift, and leaked credentials).
-5. **Data Layer:** PostgreSQL 15 stores team/user accounts, targets, scan historical logs, and vulnerabilities. Redis 7 handles distributed worker locks, task queues, and API rate-limiting tokens.
+Scans run as background jobs, so a slow target never blocks the dashboard. A scheduler re-scans monitored targets and alerts you when something changes.
 
----
+## About this repository
 
-## 🛠️ The 9 Scan Engine Modules
+This is the public overview of Mangudai. The product source code is private. Questions, bug reports and feedback: [support@mangudai.io](mailto:support@mangudai.io). Security reports: see [SECURITY.md](SECURITY.md).
 
-Mangudai ASM features an orchestrator (`worker.go`) that spawns concurrent analysis threads in a goroutine pool. Based on the tenant's plan quotas, the following 9 modules execute:
+Built by [Oktay Bilge](https://www.linkedin.com/in/oktaybilge/) · [Mangudai on LinkedIn](https://www.linkedin.com/company/135156659/)
 
-1. **Subdomain Discovery (Module 1 - Passive)**
-   * Maps the external DNS attack surface using integrations like `subfinder` to discover active subdomains and target hosts.
-2. **Port Scanning & Service Fingerprinting (Module 2 - Active)**
-   * Leverages custom `nmap` TCP parameters to find open ports and identify active system services.
-3. **Web Probing (Module 3 - Active)**
-   * Probes HTTP/HTTPS ports to analyze web technologies, server types, and framework versions.
-4. **Security HTTP Header Audit (Module 4 - Active)**
-   * Evaluates HTTP security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy) to identify missing protective controls.
-5. **Sensitive File & Directory Leakage Scanner (Module 5 - Active)**
-   * Scans for exposed project structures, environment configurations (`.env`, `.git`), code backups, and database dumps.
-6. **SSL/TLS Certificate Inspection (Module 6 - Passive)**
-   * Audits SSL/TLS cipher strength, expiry dates, and issuer validation records to avoid domain downtime or man-in-the-middle risks.
-7. **Email Security Auditing (Module 7 - Passive)**
-   * Audits DNS-level email validation configurations (SPF, DKIM, DMARC) to prevent spoofing and domain reputation hijacking.
-8. **Nikto Web Vulnerability Scanning (Module 8 - Active)**
-   * Spawns `nikto` wrappers to detect outdated server modules, default CGI paths, and cross-site scripting (XSS) vectors.
-9. **SQLi / XSS Canary Probing (Module 9 - Active)**
-   * Executes native active payloads to identify raw SQL Injection (SQLi) and client-side Cross-Site Scripting (XSS) vulnerabilities.
-
----
-
-## 🚀 The Plan Matrix (Scout ➔ Khan)
-
-Mangudai's licensing maps onto ancient Mongol military tiers, dictating scan permissions and reporting quotas:
-
-| Plan Name | Price (Month) | Monthly Scans | Max Scope | Enabled Modules |
-| :--- | :--- | :--- | :--- | :--- |
-| **Scout** (Free) | $0 | 5 Scans | 1 Project, 1 Target | Subdomains, SSL Inspection, Email Security |
-| **Warrior** | $29 | 20 Scans | 5 Projects, 20 Targets | Port Scanning, Web Probing, Header Audit, Sensitive Files |
-| **Commander**| $59 | 50 Scans | Unlimited | KVKK Compliance Audit, Dark Web Leaks, Weekly Automations |
-| **Khan** (Pentest) | $299 | 150 Scans | Unlimited | All 9 Modules (Nikto & SQLi Active), API Access Keys, White-Label PDFs |
-
----
-
-## 💡 Why Mangudai?
-
-Modern organizations have distributed, dynamic assets across multiple hosting providers, leaving unseen exposures. Mangudai ASM automates external asset inventory mapping:
-* **MSSP Friendly:** White-label PDF reports and sub-tenant portals allow security firms to manage client portfolios in one hub.
-* **Cost-Efficient:** Combines open-source scanners and custom native probes in a unified Redis queue, saving costly API tokens.
-* **Compliance Ready:** Built-in auditing modules for KVKK (Turkish Data Protection Law) and GDPR compliance indicators.
-
----
-
-## 📸 Platform Interface Gallery
-
-Below are the interface screenshots showing the Mangudai ASM dashboard, active security scans, risk scoring dials, customized billing simulator, and client portfolio views:
-
-<p align="center">
-  <img src="screenshots/1.png" width="48%" alt="Mangudai ASM Interface 1" />
-  <img src="screenshots/2.png" width="48%" alt="Mangudai ASM Interface 2" />
-</p>
-
-<p align="center">
-  <img src="screenshots/3.png" width="48%" alt="Mangudai ASM Interface 3" />
-  <img src="screenshots/4.png" width="48%" alt="Mangudai ASM Interface 4" />
-</p>
-
-<p align="center">
-  <img src="screenshots/5.png" width="48%" alt="Mangudai ASM Interface 5" />
-  <img src="screenshots/6.png" width="48%" alt="Mangudai ASM Interface 6" />
-</p>
-
-<p align="center">
-  <img src="screenshots/7.png" width="48%" alt="Mangudai ASM Interface 7" />
-  <img src="screenshots/8.png" width="48%" alt="Mangudai ASM Interface 8" />
-</p>
-
-<p align="center">
-  <img src="screenshots/9.png" width="48%" alt="Mangudai ASM Interface 9" />
-  <img src="screenshots/10.png" width="48%" alt="Mangudai ASM Interface 10" />
-</p>
-
----
-
-## 🏷️ Topics
-`attack-surface-management` `cybersecurity` `golang` `saas` `external-attack-surface-management`
+<sub>The Mangudai were Mongol cavalry archers who rode ahead of the army to probe the enemy before the battle. The product does the same for your domain.</sub>
